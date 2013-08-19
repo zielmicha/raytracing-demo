@@ -9,16 +9,30 @@ class Scene(object):
         self.camera = Vector3(0, 0, -3.)
 
         lights = LightSet()
-        #lights.add_point(Vector3(10, 10, -3.), Vector3(0.3, 0., 0.))
-        lights.add_point(self.camera, Vector3(0., 0.2, 0))
+        lights.ambient = Vector3(0.01, 0.01, 0.01)
+        lights.add_point(Vector3(10, 10, -3.), Vector3(1, 1, 1))
+        lights.add_point(self.camera, Vector3(0., 0., 0.1))
+
         lights.add_diffuse(Vector3(0.5, -1, 1).normalized(),
                            Vector3(0.5, 0.1, 0.))
-        self.objects = [Sphere(lights)]
+
+        self.objects = [
+            Sphere(lights, Vector3(0, 0, 8.), 1)]
+        for x, y in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+            self.objects.append(
+                Sphere(lights, Vector3(y, x, 7.7), 0.3))
+        self.objects.reverse()
 
     def get_pixel(self, x, y):
         v = Vector3()
+        dist = None
         for obj in self.objects:
-            v += obj.draw(self.camera, x, y)
+            color, pos = obj.draw(self.camera, x, y)
+            if color:
+                mdist = abs(pos - self.camera)
+                if not dist or mdist < dist:
+                    dist = mdist
+                    v = color
 
         v.x = min(max(v.x, 0), 1)
         v.y = min(max(v.y, 0), 1)
@@ -39,9 +53,9 @@ class LightSet(object):
         self.diffuse.append((src, color))
 
 class Sphere(object):
-    def __init__(self, lightset):
-        self.c = Vector3(0, 0, 8.)
-        self.r = 1
+    def __init__(self, lightset, center, r):
+        self.c = center
+        self.r = r
         self.lightset = lightset
 
     def draw(self, a, x, y):
@@ -56,12 +70,12 @@ class Sphere(object):
         delta = B ** 2 - 4 * A * C
 
         if delta >= 0:
-            t = (delta ** 0.5 - B) / (2 * A)
+            t = (-delta ** 0.5 - B) / (2 * A)
             x = (b - a) * t + a
             normal = (x - c).normalized()
             color = Vector3()
             for light_src, light_color in self.lightset.point:
-                light = max((x - light_src).normalized().dot(normal), 0)
+                light = max(-(x - light_src).normalized().dot(normal), 0)
                 color += light_color * light
 
             for light_src, light_color in self.lightset.diffuse:
@@ -69,6 +83,6 @@ class Sphere(object):
                 color += light_color * light
 
             color += self.lightset.ambient
-            return color
+            return color, x
         else:
-            return Vector3(0, 0, -delta / 10000)
+            return None, None
