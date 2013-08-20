@@ -44,6 +44,26 @@ def draw2(get_pixel, name='test', w=640, h=480):
     print 'finished'
     proc.wait()
 
+class Image(object):
+    def __init__(self, w, h, data):
+        self.w = w
+        self.h = h
+        self.data = data
+        assert len(self.data) == w * h * 3
+
+    def get_at(self, x, y):
+        p = y * self.w + x
+        return struct.unpack('BBB', self.data[p * 3 : p * 3 + 3])
+
+    @classmethod
+    def load(cls, filename):
+        import subprocess, json
+        data = subprocess.check_output(['python',
+                                        'load_image.py', filename])
+        data = json.loads(data)
+        return cls(data['size'][0], data['size'][1],
+                   data['data'].decode('base64'))
+
 try:
     import __pypy__
 except ImportError:

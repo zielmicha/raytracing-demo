@@ -1,3 +1,4 @@
+from __future__ import division
 from euclid import *
 
 PLANE_DIST = 1
@@ -132,4 +133,27 @@ def texture_mul(a, b):
     return Vector3(a.x * b.x, a.y * b.y, a.z * b.z)
 
 def texture_mapping(x, n):
-    return Vector2(x.x, y.y) # TODO!!!
+    return Vector2(x.x, x.y) # TODO!!!
+
+class Texture(object):
+    def __init__(self, image, mapped_size):
+        self.mapped_size = mapped_size
+        self.image = image
+
+    def __call__(self, p):
+        x = p.x / self.mapped_size.x
+        y = p.y / self.mapped_size.y
+        x %= 1
+        y %= 1
+        color = self.image.get_at(int(x * self.image.w),
+                                  int(y * self.image.h))
+        return Vector3(color[0] / 256., color[1] / 256.,
+                       color[2] / 256.)
+
+class MergedTexture(object):
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def __call__(self, p):
+        return self.a(p) + self.b(p)
