@@ -125,13 +125,15 @@ class Sphere(Object):
             return None, None
 
 class Triangle(Object):
-    def __init__(self, lightset, p1, p2, p3, texture=None):
+    def __init__(self, lightset, p1, p2, p3, texture=None,
+                 normal_texture=None):
         self.lightset = lightset
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
         self.n = (p1 - p2).cross(p1 - p3).normalized()
         self.texture = texture
+        self.normal_texture = normal_texture
 
     def intersect(self, a, b):
         p1 = self.p1
@@ -160,6 +162,9 @@ class Triangle(Object):
         return x, n
 
     def make_color(self, x, n):
+        if self.normal_texture:
+            tex_x = texture_mapping(x, n)
+            n = self.normal_texture(tex_x, n).normalized()
         color = super(Triangle, self).make_color(x, n)
         if self.texture:
             tex_x = texture_mapping(x, n)

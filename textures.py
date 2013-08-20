@@ -1,5 +1,6 @@
 import scene
 from euclid import *
+from math import *
 from scene import LightSet, Triangle, Sphere, Texture, MergedTexture
 from draw import Image
 
@@ -28,17 +29,17 @@ class Scene(scene.Scene):
             Vector3(2, -3, d),
             Vector3(0, -3, d - S*2),
             Vector3(0, 2, d - S),
-            tex_img,
+            texture=tex_img,
         )
 
         self.objects += [
             Sphere(lights, Vector3(0.5, 0, 29), 0.3)
         ]
 
-    def make_tetrahedron(self, light, a, b, c, d, texture):
+    def make_tetrahedron(self, light, a, b, c, d, **kwargs):
         return [
-            Triangle(light, a, b, c, texture),
-            Triangle(light, a, b, d, texture),
-            Triangle(light, a, c, d, texture),
-            Triangle(light, b, c, d, texture),
+            Triangle(light, a, b, c, **kwargs),
+            Triangle(light, a, b, d, **kwargs),
+            Triangle(light, a, c, d, **kwargs),
+            Triangle(light, b, c, d, **kwargs),
             ]
