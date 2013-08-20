@@ -22,8 +22,9 @@ class Scene(object):
     def get_pixel(self, x, y):
         v = Vector3()
         dist = None
+        b = Vector3(x, y, 0)
         for obj in self.objects:
-            color, pos = obj.draw(self.camera, x, y)
+            color, pos = obj.draw(self.camera, b)
             if color:
                 mdist = abs(pos - self.camera)
                 if not dist or mdist < dist:
@@ -41,6 +42,7 @@ class LightSet(object):
         self.point = []
         self.diffuse = []
         self.ambient = Vector3()
+        self.shadow_objects = None
 
     def add_point(self, src, color=Vector3(1, 1, 1)):
         self.point.append((src, color))
@@ -52,23 +54,59 @@ class LightSet(object):
         color = Vector3()
         for light_src, light_color in self.point:
             light = max(-(x - light_src).normalized().dot(normal), 0)
-            color += light_color * light
+            if not self.is_obscured(light_src, x):
+                color += light_color * light
 
-        for light_src, light_color in self.diffuse:
-            light = max((light_src).dot(normal), 0)
-            color += light_color * light
+        for light_dir, light_color in self.diffuse:
+            light_src = x + light_dir * 100 # TODO: constant
+            light = max(light_dir.normalized().dot(normal), 0)
+            if not self.is_obscured(light_src, x):
+                color += light_color * light
 
         color += self.ambient
         return color
 
-class Sphere(object):
+    def is_obscured(self, src, dest):
+        if not self.shadow_objects:
+            return False
+        for obj in self.shadow_objects:
+            x, normal = obj.intersect(src, dest)
+            if x is not None:
+                v2 = (dest - src)
+                t = vec_div((x - src), v2)
+                if t > 0.01 and t < 0.99:
+                    return True
+        return False
+
+def vec_div(a, b):
+    avg = []
+    if abs(b.x) > 0.01:
+        avg.append(a.x / b.x)
+    if abs(b.y) > 0.01:
+        avg.append(a.y / b.y)
+    if abs(b.z) > 0.01:
+        avg.append(a.z / b.z)
+    return sum(avg) / len(avg)
+
+class Object(object):
+    def draw(self, a, b):
+        x, normal = self.intersect(a, b)
+        if x is not None:
+            return self.make_color(x, normal), x
+        else:
+            return None, None
+
+    def make_color(self, x, normal):
+        color = self.lightset.make_light(x, normal)
+        return color
+
+class Sphere(Object):
     def __init__(self, lightset, center, r):
         self.c = center
         self.r = r
         self.lightset = lightset
 
-    def draw(self, a, x, y):
-        b = Vector3(x, y, 0)
+    def intersect(self, a, b):
         c = self.c
         r = self.r
 
@@ -82,12 +120,11 @@ class Sphere(object):
             t = (-delta ** 0.5 - B) / (2 * A)
             x = (b - a) * t + a
             normal = (x - c).normalized()
-            color = self.lightset.make_light(x, normal)
-            return color, x
+            return x, normal
         else:
             return None, None
 
-class Triangle(object):
+class Triangle(Object):
     def __init__(self, lightset, p1, p2, p3, texture=None):
         self.lightset = lightset
         self.p1 = p1
@@ -96,9 +133,7 @@ class Triangle(object):
         self.n = (p1 - p2).cross(p1 - p3).normalized()
         self.texture = texture
 
-    def draw(self, a, x, y):
-        b = Vector3(x, y, 0)
-
+    def intersect(self, a, b):
         p1 = self.p1
         p2 = self.p2
         p3 = self.p3
@@ -122,12 +157,15 @@ class Triangle(object):
         if r0 < 0 or r1 < 0 or r2 < 0:
             return None, None
 
-        color = self.lightset.make_light(x, n)
+        return x, n
+
+    def make_color(self, x, n):
+        color = super(Triangle, self).make_color(x, n)
         if self.texture:
-            tex_x = texture_mapping(x - a, n)
+            tex_x = texture_mapping(x, n)
             tex_color = self.texture(tex_x)
             color = texture_mul(tex_color, color)
-        return color, x
+        return color
 
 def texture_mul(a, b):
     return Vector3(a.x * b.x, a.y * b.y, a.z * b.z)
