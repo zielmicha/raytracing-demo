@@ -87,12 +87,13 @@ class Sphere(object):
             return None, None
 
 class Triangle(object):
-    def __init__(self, lightset, p1, p2, p3):
+    def __init__(self, lightset, p1, p2, p3, texture=None):
         self.lightset = lightset
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
-        self.n = (p1 - p2).cross(p1 - p3)
+        self.n = (p1 - p2).cross(p1 - p3).normalized()
+        self.texture = texture
 
     def draw(self, a, x, y):
         b = Vector3(x, y, 0)
@@ -121,4 +122,14 @@ class Triangle(object):
             return None, None
 
         color = self.lightset.make_light(x, n)
+        if self.texture:
+            tex_x = texture_mapping(x - a, n)
+            tex_color = self.texture(tex_x)
+            color = texture_mul(tex_color, color)
         return color, x
+
+def texture_mul(a, b):
+    return Vector3(a.x * b.x, a.y * b.y, a.z * b.z)
+
+def texture_mapping(x, n):
+    return Vector2(x.x, y.y) # TODO!!!
