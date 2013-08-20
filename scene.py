@@ -72,9 +72,9 @@ class LightSet(object):
         for obj in self.shadow_objects:
             x, normal = obj.intersect(src, dest)
             if x is not None:
-                v2 = (dest - src)
-                t = vec_div((x - src), v2)
-                if t > 0.01 and t < 0.99:
+                v2 = (src - dest)
+                t = vec_div((x - dest), v2)
+                if t > 0.01 and t < 0.9999:
                     return True
         return False
 
