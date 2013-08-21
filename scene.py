@@ -22,9 +22,10 @@ class Scene(object):
                            Vector3(0.5, 0.1, 0.))
         return lights
 
+    def init(self):
+        self.renderer = Renderer(self.objects)
+
     def get_pixel(self, x, y):
-        if not self.renderer:
-            self.renderer = Renderer(self.objects)
         b = Vector3(x, y, 0)
         v = self.renderer.trace_pixel(self.camera, b)
         v.x = min(max(v.x, 0), 1)

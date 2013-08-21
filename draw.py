@@ -3,6 +3,8 @@ import sys
 import os
 import subprocess
 import time
+import random
+import multiprocessing
 
 def draw(get_pixel, name='test', w=640, h=480):
     import pygame
@@ -26,23 +28,37 @@ def draw(get_pixel, name='test', w=640, h=480):
     while (pygame.event.wait().type != pygame.KEYDOWN):
         pass
 
+def render_line(get_pixel, i, w, h, scale):
+    line = []
+    for j in range(w):
+        x = (j-w/2)/scale
+        y = -(i-h/2)/scale
+        r, g, b = tuple(get_pixel(x, y))
+        line.append(struct.pack('BBB',
+                                int(r*255), int(g*255), int(b*255)))
+    return i, line
+
+def render_line_args(args):
+    return render_line(*args)
+
 def draw2(get_pixel, name='test', w=640, h=480):
     line = []
     scale = float(max(w, h))
     proc = subprocess.Popen('python filter.py %d %d' % (w, h),
                             shell=True,
                             stdin=subprocess.PIPE)
+    pool = multiprocessing.Pool()
     start = time.time()
     f_out = proc.stdin
-    for i in range(h):
-        line = []
-        for j in range(w):
-            x = (j-w/2)/scale
-            y = -(i-h/2)/scale
-            r, g, b = tuple(get_pixel(x, y))
-            line.append(struct.pack('BBB', int(r*255), int(g*255), int(b*255)))
+    rows = range(h)
+    random.shuffle(rows)
+    args = [ (get_pixel, i, w, h, scale) for i in rows ]
+    for i, line in pool.imap_unordered(render_line_args, args,
+                                       chunksize=100):
+        f_out.write(struct.pack('I', i))
         f_out.write(''.join(line))
     f_out.flush()
+    pool.close()
     print 'Drawing finished in %.1f s' % (time.time() - start)
     proc.wait()
 

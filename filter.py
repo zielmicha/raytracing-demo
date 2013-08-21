@@ -13,14 +13,12 @@ def main():
     start = time.time()
 
     _unpack = struct.unpack
-    for y in xrange(h):
+    for _ in xrange(h):
+        y, = _unpack('I', sys.stdin.read(4))
         for x in xrange(w):
             color = _unpack('BBB', sys.stdin.read(3))
             screen.set_at((x, y), color)
         if y % 10 == 0:
-            curr = time.time()
-            if curr > start + 8:
-                print y, '/', h
             pygame.display.flip()
 
     pygame.display.flip()
