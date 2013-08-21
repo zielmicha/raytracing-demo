@@ -37,6 +37,8 @@ class Renderer(object):
     def __init__(self, objects):
         self._blocks = None
         self._block_size = 1
+        self._superblock_size = 16
+        self._superblocks = dict()
         self._make_blocks(objects)
 
     def trace_pixel(self, a, b):
@@ -59,8 +61,14 @@ class Renderer(object):
         delta = (b - a).normalized() * self._block_size * 0.5
         ray_pos = Vector3(*a)
         last_block = None
-        for i in xrange(1000): # TODO
+        sb = self._superblock_size
+        for i in xrange(10): # TODO
             block = to_block(ray_pos)
+            bx, by, bz = block
+            if (bx // sb, by // sb, bz // sb) not in self._superblocks:
+                ray_pos += delta * sb
+                continue
+
             if block != last_block:
                 last_block = block
                 for item in self._blocks.get(block, []):
@@ -76,6 +84,7 @@ class Renderer(object):
         _blocks = collections.defaultdict(list)
         _floor = lambda x: int(floor(x))
         _ceil = lambda x: int(ceil(x))
+        sb = self._superblock_size
 
         for obj in objects:
             a, b = obj.bbox
@@ -92,6 +101,7 @@ class Renderer(object):
                 for y in yR:
                     for z in zR:
                         _blocks[x, y, z].append(obj)
+                        self._superblocks[x // sb, y // sb, z // sb] = 1
         self._blocks = dict(_blocks)
         print 'blocks', len(self._blocks)
 
