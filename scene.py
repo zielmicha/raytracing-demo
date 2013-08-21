@@ -44,13 +44,16 @@ class Renderer(object):
     def trace_pixel(self, a, b):
         v = Vector3()
         dist = None
-        for obj in self._find_objects(a, b):
-            color, pos = obj.draw(a, b)
-            if color:
-                mdist = abs(pos - a)
-                if not dist or mdist < dist:
-                    dist = mdist
-                    v = color
+        for objlist in self._find_objects(a, b):
+            for obj in objlist:
+                color, pos = obj.draw(a, b)
+                if color:
+                    mdist = abs(pos - a)
+                    if not dist or mdist < dist:
+                        dist = mdist
+                        v = color
+            if dist:
+                break
         return v
 
     def _find_objects(self, a, b):
@@ -71,7 +74,8 @@ class Renderer(object):
 
             if block != last_block:
                 last_block = block
-                for item in self._blocks.get(block, []):
+                item = self._blocks.get(block, None)
+                if item is not None:
                     yield item
 
             ray_pos += delta
@@ -254,6 +258,7 @@ class Triangle(TexturedObject):
         return x, n
 
     def texture_mapping(self, x, n):
+        # v=x1 y - xy_1 / x1y2 - y1x2
         return Vector2(x.x, x.y) # TODO!!!
 
 def texture_mul(a, b):
