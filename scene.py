@@ -1,5 +1,6 @@
 from __future__ import division
 from euclid import *
+from math import atan2, asin
 
 PLANE_DIST = 1
 CENTER = Vector3(0.5, 0.5, 0)
@@ -109,16 +110,32 @@ class Object(object):
             return None, None
 
     def make_color(self, x, normal):
+        # TODO:
+        # reflected_dir = -2dot(ligth_dir, n)*n  + light_dir
         color = self.lightset.make_light(x, normal)
         return color
 
-class Sphere(Object):
-    def __init__(self, lightset, center, r):
+class TexturedObject(Object):
+    def make_color(self, x, n):
+        if self.normal_texture:
+            tex_x = self.texture_mapping(x, n)
+            n = self.normal_texture(tex_x, n).normalized()
+        color = Object.make_color(self, x, n)
+        if self.texture:
+            tex_x = self.texture_mapping(x, n)
+            tex_color = self.texture(tex_x)
+            color = texture_mul(tex_color, color)
+        return color
+
+class Sphere(TexturedObject):
+    def __init__(self, lightset, center, r, texture=None):
         self.c = center
         self.r = r
         self.lightset = lightset
         r_vec = Vector3(self.r, self.r, self.r)
         self.bbox = self.c - r_vec, self.c + r_vec
+        self.texture = texture
+        self.normal_texture = None
 
     def intersect(self, a, b):
         c = self.c
@@ -138,7 +155,12 @@ class Sphere(Object):
         else:
             return None, None
 
-class Triangle(Object):
+    def texture_mapping(self, p, n):
+        q = p - self.c
+        return Vector2(asin(q.y / self.r),
+                       atan2(q.z, q.x))
+
+class Triangle(TexturedObject):
     def __init__(self, lightset, p1, p2, p3, texture=None,
                  normal_texture=None):
         self.lightset = lightset
@@ -175,18 +197,6 @@ class Triangle(Object):
             return None, None
 
         return x, n
-
-    def make_color(self, x, n):
-        if self.normal_texture:
-            tex_x = texture_mapping(x, n)
-            n = self.normal_texture(tex_x, n).normalized()
-        color = super(Triangle, self).make_color(x, n)
-        if self.texture:
-            tex_x = texture_mapping(x, n)
-            tex_color = self.texture(tex_x)
-            color = texture_mul(tex_color, color)
-        # reflected_dir = -2dot(ligth_dir, n)*n  + light_dir
-        return color
 
 def texture_mul(a, b):
     return Vector3(a.x * b.x, a.y * b.y, a.z * b.z)

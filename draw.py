@@ -72,5 +72,5 @@ except ImportError:
     pass
 else:
     draw = draw2
-    import pypyjit
-    pypyjit.set_param(trace_limit=500000)
+    #import pypyjit
+    #pypyjit.set_param(trace_limit=500000)
