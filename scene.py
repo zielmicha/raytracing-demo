@@ -8,6 +8,7 @@ class Scene(object):
     def __init__(self):
         self.objects = []
         self.camera = Vector3(0, 0, -3.)
+        self._blocks = None
 
     def make_example_light(self):
         lights = LightSet()
@@ -19,18 +20,29 @@ class Scene(object):
                            Vector3(0.5, 0.1, 0.))
         return lights
 
-    def get_pixel(self, x, y):
+    def _trace_pixel(self, a, b):
         v = Vector3()
         dist = None
-        b = Vector3(x, y, 0)
-        for obj in self.objects:
-            color, pos = obj.draw(self.camera, b)
+        for obj in self._find_objects(a, b):
+            color, pos = obj.draw(a, b)
             if color:
-                mdist = abs(pos - self.camera)
+                mdist = abs(pos - a)
                 if not dist or mdist < dist:
                     dist = mdist
                     v = color
+        return v
 
+    def _find_objects(self, a, b):
+        return self.objects
+
+    def make_blocks(self):
+        pass
+
+    def get_pixel(self, x, y):
+        if not self._blocks:
+            self.make_blocks()
+        b = Vector3(x, y, 0)
+        v = self._trace_pixel(self.camera, b)
         v.x = min(max(v.x, 0), 1)
         v.y = min(max(v.y, 0), 1)
         v.z = min(max(v.z, 0), 1)
