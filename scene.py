@@ -11,7 +11,7 @@ class Scene(object):
         self.objects = []
         self.camera = Vector3(0, 0, -3.)
         self._blocks = None
-        self._block_size = 0.5
+        self._block_size = 1
 
     def make_example_light(self):
         lights = LightSet()
@@ -54,7 +54,7 @@ class Scene(object):
         delta = (b - a).normalized() * self._block_size * 0.5
         ray_pos = Vector3(*a)
         last_block = None
-        for i in xrange(100): # TODO
+        for i in xrange(1000): # TODO
             block = to_block(ray_pos)
             if block != last_block:
                 last_block = block
@@ -71,17 +71,18 @@ class Scene(object):
         _blocks = collections.defaultdict(list)
         _floor = lambda x: int(floor(x))
         _ceil = lambda x: int(ceil(x))
+
         for obj in self.objects:
             a, b = obj.bbox
             xR = xrange(
                 _floor(a.x / self._block_size),
-                _ceil(b.x / self._block_size) + 1)
+                _ceil(b.x / self._block_size))
             yR = xrange(
                 _floor(a.y / self._block_size),
-                _ceil(b.y / self._block_size) + 1)
+                _ceil(b.y / self._block_size))
             zR = xrange(
                 _floor(a.z / self._block_size),
-                _ceil(b.z / self._block_size) + 1)
+                _ceil(b.z / self._block_size))
             for x in xR:
                 for y in yR:
                     for z in zR:
@@ -210,7 +211,6 @@ class Triangle(TexturedObject):
         self.texture = texture
         self.normal_texture = normal_texture
         self.bbox = make_bbox([self.p1, self.p2, self.p3])
-        print self.p1, self.p2, self.p3, '->', self.bbox
 
     def intersect(self, a, b):
         p1 = self.p1
@@ -238,19 +238,19 @@ class Triangle(TexturedObject):
 
         return x, n
 
+    def texture_mapping(self, x, n):
+        return Vector2(x.x, x.y) # TODO!!!
+
 def texture_mul(a, b):
     return Vector3(a.x * b.x, a.y * b.y, a.z * b.z)
 
-def texture_mapping(x, n):
-    return Vector2(x.x, x.y) # TODO!!!
-
 def make_bbox(points):
-    return Vector3(max( p.x for p in points ),
-                   max( p.y for p in points ),
-                   max( p.z for p in points )), \
-        Vector3(min( p.x for p in points ),
-                min( p.y for p in points ),
-                min( p.z for p in points ))
+    return Vector3(min( p.x for p in points ),
+                   min( p.y for p in points ),
+                   min( p.z for p in points )), \
+        Vector3(max( p.x for p in points ),
+                max( p.y for p in points ),
+                max( p.z for p in points ))
 
 class Texture(object):
     def __init__(self, image, mapped_size):
