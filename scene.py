@@ -10,8 +10,7 @@ class Scene(object):
     def __init__(self):
         self.objects = []
         self.camera = Vector3(0, 0, -3.)
-        self._blocks = None
-        self._block_size = 1
+        self.renderer = None
 
     def make_example_light(self):
         lights = LightSet()
@@ -24,17 +23,23 @@ class Scene(object):
         return lights
 
     def get_pixel(self, x, y):
-        if not self._blocks:
-            self.make_blocks()
+        if not self.renderer:
+            self.renderer = Renderer(self.objects)
         b = Vector3(x, y, 0)
-        v = self._trace_pixel(self.camera, b)
+        v = self.renderer.trace_pixel(self.camera, b)
         v.x = min(max(v.x, 0), 1)
         v.y = min(max(v.y, 0), 1)
         v.z = min(max(v.z, 0), 1)
 
         return v
 
-    def _trace_pixel(self, a, b):
+class Renderer(object):
+    def __init__(self, objects):
+        self._blocks = None
+        self._block_size = 1
+        self._make_blocks(objects)
+
+    def trace_pixel(self, a, b):
         v = Vector3()
         dist = None
         for obj in self._find_objects(a, b):
@@ -63,16 +68,16 @@ class Scene(object):
 
             ray_pos += delta
 
-    def make_blocks(self):
+    def _make_blocks(self, objects):
         if self._blocks:
             raise RuntimeError()
-        if not self.objects:
+        if not objects:
             raise RuntimeError('tried to render nothing')
         _blocks = collections.defaultdict(list)
         _floor = lambda x: int(floor(x))
         _ceil = lambda x: int(ceil(x))
 
-        for obj in self.objects:
+        for obj in objects:
             a, b = obj.bbox
             xR = xrange(
                 _floor(a.x / self._block_size),
