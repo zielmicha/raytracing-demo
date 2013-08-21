@@ -7,6 +7,8 @@ class Scene(scene.Scene):
         super(Scene, self).__init__()
         lights = LightSet()
         lights.ambient = Vector3(0.2, 0.2, 0.2)
+        lights.add_point(self.camera,
+                         Vector3(0, 0.9, 0))
 
         depth = 100
 

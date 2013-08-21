@@ -105,6 +105,8 @@ class Sphere(Object):
         self.c = center
         self.r = r
         self.lightset = lightset
+        r_vec = Vector3(self.r, self.r, self.r)
+        self.bbox = self.c - r_vec, self.c + r_vec
 
     def intersect(self, a, b):
         c = self.c
@@ -134,6 +136,7 @@ class Triangle(Object):
         self.n = (p1 - p2).cross(p1 - p3).normalized()
         self.texture = texture
         self.normal_texture = normal_texture
+        self.bbox = make_bbox([self.p1, self.p2, self.p3])
 
     def intersect(self, a, b):
         p1 = self.p1
@@ -178,6 +181,14 @@ def texture_mul(a, b):
 
 def texture_mapping(x, n):
     return Vector2(x.x, x.y) # TODO!!!
+
+def make_bbox(points):
+    return Vector3(max( p.x for p in points ),
+                   max( p.y for p in points ),
+                   max( p.z for p in points )), \
+        Vector3(min( p.x for p in points ),
+                min( p.y for p in points ),
+                min( p.z for p in points ))
 
 class Texture(object):
     def __init__(self, image, mapped_size):
