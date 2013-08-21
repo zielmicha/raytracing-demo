@@ -2,13 +2,15 @@ import pygame
 import sys
 import struct
 import os
+import time
 
-w = 640
-h = 480
+w = int(sys.argv[1])
+h = int(sys.argv[2])
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((w,h))
+    start = time.time()
 
     _unpack = struct.unpack
     for y in xrange(h):
@@ -16,6 +18,9 @@ def main():
             color = _unpack('BBB', sys.stdin.read(3))
             screen.set_at((x, y), color)
         if y % 10 == 0:
+            curr = time.time()
+            if curr > start + 8:
+                print y, '/', h
             pygame.display.flip()
 
     pygame.display.flip()

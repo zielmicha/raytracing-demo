@@ -170,6 +170,7 @@ class Triangle(Object):
             tex_x = texture_mapping(x, n)
             tex_color = self.texture(tex_x)
             color = texture_mul(tex_color, color)
+        # reflected_dir = -2dot(ligth_dir, n)*n  + light_dir
         return color
 
 def texture_mul(a, b):

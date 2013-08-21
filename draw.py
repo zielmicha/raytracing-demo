@@ -2,6 +2,7 @@ import struct
 import sys
 import os
 import subprocess
+import time
 
 def draw(get_pixel, name='test', w=640, h=480):
     import pygame
@@ -28,9 +29,10 @@ def draw(get_pixel, name='test', w=640, h=480):
 def draw2(get_pixel, name='test', w=640, h=480):
     line = []
     scale = float(max(w, h))
-    proc = subprocess.Popen('python filter.py',
+    proc = subprocess.Popen('python filter.py %d %d' % (w, h),
                             shell=True,
                             stdin=subprocess.PIPE)
+    start = time.time()
     f_out = proc.stdin
     for i in range(h):
         line = []
@@ -41,7 +43,7 @@ def draw2(get_pixel, name='test', w=640, h=480):
             line.append(struct.pack('BBB', int(r*255), int(g*255), int(b*255)))
         f_out.write(''.join(line))
     f_out.flush()
-    print 'finished'
+    print 'Drawing finished in %.1f s' % (time.time() - start)
     proc.wait()
 
 class Image(object):
