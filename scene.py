@@ -62,7 +62,7 @@ class Renderer(object):
         ray_pos = Vector3(*a)
         last_block = None
         sb = self._superblock_size
-        for i in xrange(10): # TODO
+        for i in xrange(50): # TODO
             block = to_block(ray_pos)
             bx, by, bz = block
             if (bx // sb, by // sb, bz // sb) not in self._superblocks:
