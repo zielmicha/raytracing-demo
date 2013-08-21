@@ -1,6 +1,7 @@
 from __future__ import division
 from euclid import *
-from math import atan2, asin
+from math import atan2, asin, ceil, floor
+import collections
 
 PLANE_DIST = 1
 CENTER = Vector3(0.5, 0.5, 0)
@@ -10,6 +11,7 @@ class Scene(object):
         self.objects = []
         self.camera = Vector3(0, 0, -3.)
         self._blocks = None
+        self._block_size = 0.5
 
     def make_example_light(self):
         lights = LightSet()
@@ -20,6 +22,17 @@ class Scene(object):
         lights.add_diffuse(Vector3(0.5, -1, 1).normalized(),
                            Vector3(0.5, 0.1, 0.))
         return lights
+
+    def get_pixel(self, x, y):
+        if not self._blocks:
+            self.make_blocks()
+        b = Vector3(x, y, 0)
+        v = self._trace_pixel(self.camera, b)
+        v.x = min(max(v.x, 0), 1)
+        v.y = min(max(v.y, 0), 1)
+        v.z = min(max(v.z, 0), 1)
+
+        return v
 
     def _trace_pixel(self, a, b):
         v = Vector3()
@@ -34,21 +47,47 @@ class Scene(object):
         return v
 
     def _find_objects(self, a, b):
-        return self.objects
+        def to_block(v):
+            x, y, z = v / self._block_size
+            return int(floor(x)), int(floor(y)), int(floor(z))
+
+        delta = (b - a).normalized() * self._block_size * 0.5
+        ray_pos = Vector3(*a)
+        last_block = None
+        for i in xrange(100): # TODO
+            block = to_block(ray_pos)
+            if block != last_block:
+                last_block = block
+                for item in self._blocks.get(block, []):
+                    yield item
+
+            ray_pos += delta
 
     def make_blocks(self):
-        pass
-
-    def get_pixel(self, x, y):
-        if not self._blocks:
-            self.make_blocks()
-        b = Vector3(x, y, 0)
-        v = self._trace_pixel(self.camera, b)
-        v.x = min(max(v.x, 0), 1)
-        v.y = min(max(v.y, 0), 1)
-        v.z = min(max(v.z, 0), 1)
-
-        return v
+        if self._blocks:
+            raise RuntimeError()
+        if not self.objects:
+            raise RuntimeError('tried to render nothing')
+        _blocks = collections.defaultdict(list)
+        _floor = lambda x: int(floor(x))
+        _ceil = lambda x: int(ceil(x))
+        for obj in self.objects:
+            a, b = obj.bbox
+            xR = xrange(
+                _floor(a.x / self._block_size),
+                _ceil(b.x / self._block_size) + 1)
+            yR = xrange(
+                _floor(a.y / self._block_size),
+                _ceil(b.y / self._block_size) + 1)
+            zR = xrange(
+                _floor(a.z / self._block_size),
+                _ceil(b.z / self._block_size) + 1)
+            for x in xR:
+                for y in yR:
+                    for z in zR:
+                        _blocks[x, y, z].append(obj)
+        self._blocks = dict(_blocks)
+        print 'blocks', len(self._blocks)
 
 class LightSet(object):
     def __init__(self):
@@ -171,6 +210,7 @@ class Triangle(TexturedObject):
         self.texture = texture
         self.normal_texture = normal_texture
         self.bbox = make_bbox([self.p1, self.p2, self.p3])
+        print self.p1, self.p2, self.p3, '->', self.bbox
 
     def intersect(self, a, b):
         p1 = self.p1

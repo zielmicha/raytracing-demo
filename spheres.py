@@ -16,7 +16,7 @@ class Scene(scene.Scene):
         self.objects = [
             Sphere(lights, Vector3(0, 0, 8.), 1,
                    texture=texture_func)]
-        lights.shadow_objects = self.objects
+        #lights.shadow_objects = self.objects
 
         for x, y in [(0, 1), (0, -1), (1, 0), (-1, 0),
                      (1, 1)]:
